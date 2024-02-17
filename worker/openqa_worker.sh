@@ -20,7 +20,7 @@ get_openqa_worker_image_id() {
 }
 
 build_openqa_worker_image() {
-	CHANGES=$(git diff --name-only HEAD -- | grep -Ev "^(client.conf|workers.ini)$") || true
+	CHANGES=$(git diff --name-only HEAD -- | grep -Ev "(client.conf|workers.ini)$") || true
 	if [ -n "$CHANGES" ]; then
 		echo "Stash or commit changes before building image. Exiting."
 		exit 1

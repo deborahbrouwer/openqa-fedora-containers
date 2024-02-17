@@ -18,7 +18,7 @@ get_openqa_webui_image_id() {
 }
 
 build_openqa_webui_image() {
-	CHANGES=$(git diff --name-only HEAD -- | grep -Ev "^(client.conf|openqa.ini)$") || true
+	CHANGES=$(git diff --name-only HEAD -- | grep -Ev "(client.conf|openqa.ini)$") || true
 	if [ -n "$CHANGES" ]; then
 		echo "Stash or commit changes before building image. Exiting."
 		exit 1
