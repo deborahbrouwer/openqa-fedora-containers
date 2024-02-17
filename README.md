@@ -9,9 +9,9 @@
 
 2. Start the web UI container:
 
-    `./openqa_web.sh
+    `./openqa_web.sh`  
 
-    > If needed, the script will build the web UI image, create images, pull tests etc.  
+    > If needed, the script will build the web UI image, create assets, pull tests etc.  
     > See usage with `./openqa_web.sh -h`  
 
 3. Login as `Demo` through the web UI
