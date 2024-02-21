@@ -3,13 +3,19 @@ set -e
 REPOSITORY=openqa_webui
 
 usage() {
-		echo -e "\nUsage: $0 [-b|-c|-h][-d <openQA_debug_path>]"
+		echo -e "\nUsage: $0 \
+				[-b|-c|-h] \
+				[-d <openQA_debug_path>] \
+				[-f <os_autoinst_distri_fedora_path>] \
+				[-s <fedora_openqa_debug_path>]"
 		echo -e "\nRun the webUI container with './openqa_web.sh'"
 		echo "Options:"
 		echo "	-b	Build the web UI container image."
 		echo "	-c	Get and run createhdds to provide images unavailable through fedoraproject.org."
 		echo "	-h	Show this help message."
 		echo "	-d	For debugging: specify a local path to openQA repository."
+		echo "	-f	For debugging: specify a local path to os-autoinst-distri-fedora"
+		echo "	-s	For debugging: specify a local path to fedora_openqa"
 		exit 1
 }
 
@@ -79,12 +85,21 @@ run_createhdds() {
 	# then change the SELinux context (ls -lZ) so that the image can be accessed in the container
 	for file in *; do
 		if [[ "$file" == *.qcow2 ]] || [[ "$file" == *.img ]]; then
-			cp "$file" ../hdd/
-			chcon system_u:object_r:container_file_t:s0 ../hdd/$file;
-			chmod a+rw ../hdd/$file;
+			if [ ! -f "../hdd/$file" ]; then
+				cp "$file" ../hdd/
+				chcon system_u:object_r:container_file_t:s0 ../hdd/$file;
+				chmod a+rw ../hdd/$file;
+				files_copied=1
+			fi
 		fi
 	done
 	cd ..
+
+	if [ "$files_copied" ] && [ "$(podman ps -q --format "{{.Image}} {{.ID}}" | grep "$REPOSITORY")" ]; then
+		echo -e "\n--> Warning images were copied to hdd/ while the web UI container is running."
+		echo "--> Restart the web UI container to access these images."
+	fi
+
 }
 
 # For all options, make sure that this script is running from inside the webUI directory.
@@ -92,8 +107,7 @@ run_createhdds() {
 # where the container expects to find assets and files that will be bound in to the container.
 cd $(dirname "$0")
 
-# Parse options
-while getopts ":bchd:" opt; do
+while getopts ":bchd:f:s:" opt; do
 	case ${opt} in
 		b )
 			build_openqa_webui_image
@@ -108,14 +122,12 @@ while getopts ":bchd:" opt; do
 			;;
 		d )
 			openQA_debug_path=$OPTARG
-			if [[ $openQA_debug_path == */ ]]; then
-				openQA_debug_path=${openQA_debug_path%/}
-			fi
-
-			debug_arg="-v $openQA_debug_path/script/:/usr/share/openqa/script/:z \
-				-v $openQA_debug_path/lib/OpenQA/:/usr/share/openqa/lib/OpenQA/:z \
-				-v $openQA_debug_path/assets/:/usr/share/openqa/assets/:z \
-				-v $openQA_debug_path/templates/:/usr/share/openqa/templates/:z "
+			;;
+		f )
+			os_autoinst_distri_fedora_path=$OPTARG
+			;;
+		s )
+			fedora_openqa_debug_path=$OPTARG
 			;;
 		\? )
 			echo "Invalid option: $OPTARG" 1>&2
@@ -137,7 +149,7 @@ fi
 get_openqa_webui_image_id
 if [ -z "$OPENQA_WEBUI_IMAGE_ID" ]; then
 	echo "There is no 'openqa_webui' container image available."
-	echo "Run 'openqa_web.sh -b' build the image."
+	echo "Run 'openqa_web.sh -b' to build the image before running it."
 	exit 1
 fi
 
@@ -157,18 +169,46 @@ fi
 if [ ! -d "$PWD/data" ] && [ ! -L "$PWD/data" ]; then
 	mkdir "$PWD/data"
 fi
-if [ ! -d "$PWD/tests" ] && [ ! -L "$PWD/tests" ]; then
-	mkdir "$PWD/tests"
+
+# https://github.com/os-autoinst/openQA.git
+if [ -n "$openQA_debug_path"  ]; then
+	if [[ $openQA_debug_path == */ ]]; then
+			openQA_debug_path=${openQA_debug_path%/}
+	fi
+	openqa_debug_arg="-v $openQA_debug_path/script/:/usr/share/openqa/script/:z \
+		-v $openQA_debug_path/lib/OpenQA/:/usr/share/openqa/lib/OpenQA/:z \
+		-v $openQA_debug_path/assets/:/usr/share/openqa/assets/:z "
 fi
 
+# https://pagure.io/fedora-qa/os-autoinst-distri-fedora
+if [ -n "$os_autoinst_distri_fedora_path" ]; then
+	if [[ $os_autoinst_distri_fedora_path == */ ]]; then
+		os_autoinst_distri_fedora_path=${os_autoinst_distri_fedora_path%/}
+	fi
+	os_autoinst_distri_fedora_arg="-v $os_autoinst_distri_fedora_path/:/var/lib/openqa/share/tests/fedora/:z "
+else
+	if [ ! -d "$PWD/tests" ] && [ ! -L "$PWD/tests" ]; then
+		mkdir "$PWD/tests"
+	fi
+	os_autoinst_distri_fedora_arg="-v $PWD/tests:/var/lib/openqa/share/tests:z "
+fi
+
+# https://pagure.io/fedora-qa/fedora_openqa.git
+if [ -n "$fedora_openqa_debug_path" ]; then
+	if [[ $fedora_openqa_debug_path == */ ]]; then
+		fedora_openqa_debug_path=${fedora_openqa_debug_path%/}
+	fi
+	fedora_openqa_debug_arg="-v $fedora_openqa_debug_path/:/fedora_openqa:z "
+fi
 
 podman run -p 8080:80 \
 -v $PWD/hdd:/var/lib/openqa/share/factory/hdd:z \
 -v $PWD/iso:/var/lib/openqa/share/factory/iso:z \
 -v $PWD/data:/var/lib/pgsql/data/:z \
--v $PWD/tests:/var/lib/openqa/share/tests/:z \
 -v $PWD/client.conf:/etc/openqa/client.conf:z \
 -v $PWD/openqa.ini:/etc/openqa/openqa.ini:z \
 -v $PWD/init_openqa_web.sh:/init_openqa_web.sh:z \
-${debug_arg} \
+${os_autoinst_distri_fedora_arg} \
+${openqa_debug_arg} \
+${fedora_openqa_debug_arg} \
 --rm -it $OPENQA_WEBUI_IMAGE_ID

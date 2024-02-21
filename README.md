@@ -3,12 +3,16 @@
 
 - [About](#about)
 - [The web UI container](#The-web-UI-container)
-    - [CLI usage](#cli-usage)
-    - [Configuration](#configuration)
+    - [CLI usage web](#cli-usage-web)
+    - [Web Configuration](#web-configuration)
     - [Login](#login)
     - [Loading Tests](#loading-tests)
     - [Scheduling Tests](#scheduling-tests)
 - [The worker container](#The-worker-container)
+    - [CLI usage worker](#cli-usage-worker)
+    - [Worker Configuration](#worker-configuration)
+    - [Running workers](#running-workers)
+    - [Stopping workers](#stopping-workers)
 
 # About  
 This repository contains scripts to build and run a containerized deployment of [openQA](https://github.com/os-autoinst).  The containers are specifically designed to leverage cloud resources and are customized to support [Fedora](https://fedoraproject.org/wiki/OpenQA) release and update testing. 
@@ -25,7 +29,7 @@ Several directories are kept on the host and are bound into the web UI container
   
 Delete any of these directories to force their reinitialization by the container scripts.
 
-### CLI usage  
+### CLI usage web 
 ```bash
 ./openqa_web.sh -h
 
@@ -39,40 +43,94 @@ Options:
 	-d	For debugging: specify a local path to openQA repository.
 ```
 
-### Configuration    
+### Web Configuration    
 
 `client.conf`  
-The application [fedora_openqa](https://pagure.io/fedora-qa/fedora_openqa) can be used to schedule tests on the web UI.  To authorize `fedora-openqa.py` to access the web UI, change the first line of client.conf `[172.31.1.1:8080]` to your web server address.  
+ To authorize `fedora-openqa.py` to schedule tests, change the first line of client.conf `[172.31.1.1:8080]` to your web server address.  
 >Note: If running it locally, don't just use `localhost` in this configuration because it will be interpreted as the container's localhost not the host's localhost
->Alternatively pass the host name directly to `fedora-openqa.py` with `--openqa-hostname 172.31.1.1`    
-
 
 ### Login
 Login as `Demo` through the web UI
 
 ### Loading Tests  
-`podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c 'cd /var/lib/openqa/share/tests/fedora/; ./fifloader.py --load  templates.fif.json templates-updates.fif.json'`
+```bash
+podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c 'cd /var/lib/openqa/share/tests/fedora/;
+./fifloader.py --load  templates.fif.json templates-updates.fif.json'
+```
    
 ### Scheduling Tests
 
-Here are some examples, update the BUILDURL from `https://openqa.fedoraproject.org/`:   
+>Note tests can't be scheduled if `client.conf` is not configured.  
 
-    `podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py fcosbuild -f   	https://builds.coreos.fedoraproject.org/prod/streams/testing-devel/builds/39.20240205.20.2/x86_64'`  
+Here are some examples.
+The BUILDURLs are frequently updated so find the latest from `https://openqa.fedoraproject.org/`:   
 
-    `podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py compose -f   	https://kojipkgs.fedoraproject.org/compose/cloud/Fedora-Cloud-39-20240207.0/compose'`  
+```bash
+podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
+fcosbuild -f https://builds.coreos.fedoraproject.org/prod/streams/testing-devel/builds/39.20240220.20.1/x86_64'
+```
 
-    `podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py compose -f --flavors Cloud_Base-qcow2-qcow2  https://kojipkgs.fedoraproject.org/compose/rawhide/Fedora-Rawhide-20240207.n.0/compose'`
+```bash
+podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
+compose -f https://kojipkgs.fedoraproject.org/compose/cloud/Fedora-Cloud-39-20240220.0/compose'
+```
 
-   `podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py compose -f  --flavors Server-dvd-iso 	 	https://kojipkgs.fedoraproject.org/compose/branched/Fedora-40-20240216.n.0/compose'`  
+```bash
+podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
+compose -f --flavors Cloud_Base-qcow2-qcow2 \
+https://kojipkgs.fedoraproject.org/compose/rawhide/Fedora-Rawhide-20240220.n.0/compose'
+```
 
+```bash
+podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
+compose -f --flavors Server-dvd-iso \
+https://kojipkgs.fedoraproject.org/compose/branched/Fedora-40-20240221.n.0/compose'
+```
+
+Alternatively, tests can be run with `openqa-cli`.
+Using this tool requires a manual check of the variables expected by the tests as set out in `os-autoinst-distri-fedora/templates.fif.jsontemplates.fif.json`.  
+For example, these commands schedule two tests that must be run in parallel:  
+
+```bash
+openqa-cli api -X POST isos \
+ARCH=x86_64 \
+BUILD=Fedora-Rawhide-20240206.n.0 \
+UP1REL=39 \
+DISTRI=fedora \
+FLAVOR=universal \
+TEST=upgrade_server_domain_controller \
+VERSION=Rawhide
+
+openqa-cli api -X POST isos \
+ARCH=x86_64 \
+BUILD=Fedora-Rawhide-20240206.n.0 \
+UP1REL=39 \
+DISTRI=fedora \
+FLAVOR=universal \
+TEST=upgrade_realmd_client \
+VERSION=Rawhide
+```
 
 # The worker container
 
-### CLI usage  
+### CLI usage worker
 ```bash
+./openqa_worker.sh
+
+Usage: ./openqa_worker.sh -n NUMBER_OF_WORKERS [-b|-h] [-c <WORKER_CLASS>] [-d <openQA_debug_path>] [-g <os-autoinst_debug_path>]
+
+Options:
+	-b	Build the worker container image.
+	-c	set WORKER_CLASS; default is 'qemu_x86_64,tap,tap2'
+	-h	Show this help message
+	-d	For debugging: specify a local path to openQA repository
+	-g	For debugging: specify a local path to os-autoinst repository
+	-n	Number of openqa_worker containers to run.
+
+Stop all worker containers gracefully with '-n 0'
 ```
 
-### Configuration    
+### Worker Configuration    
   `client.conf`  
      * change `[172.31.1.1]` to the web UI host  
 
@@ -80,16 +138,13 @@ Here are some examples, update the BUILDURL from `https://openqa.fedoraproject.o
       * change `HOST = http://172.31.1.1:8080` to the web UI host  
       * change `WORKER_HOSTNAME = 172.31.1.1` to the location where the web UI host can send commands to the worker for developer mode.  Setting the `WORKER_HOSTNAME` is crucial if the worker is running in a container because otherwise the worker will (falsely) advertise its container id as the best location to reach the worker.  
 
-### Run workers     
-e.g. this command runs three workers:  
+### Running workers     
+For example, this command runs three workers:  
 `./openqa_worker.sh -n 3` 
 
-    > If needed, the script will build the worker image, pull tests etc.  
-    > See usage with `./openqa_worker.sh -h`  
-
-Refresh your browser. Sometimes it will take a minute or two for the web and workers to start talking.  
+Note>Refresh your browser after starting the workers. Sometimes it will take a minute or two for the web and workers to start talking.  
 
 ### Stopping workers     
-`./openqa_worker.sh -n 0`
-    > The workers need to tell the web UI that they are stopping and will no longer be available to accept tests.  If the workers are not stopped gracefully, the web UI will slow down substantially as it continues to send tests to unavailable workers.  
+`./openqa_worker.sh -n 0`  
+>The workers need to tell the web UI that they are stopping and will no longer be available to accept tests.  If the workers are not stopped gracefully, the web UI will slow down substantially as it continues to send tests to unavailable workers.  
 
