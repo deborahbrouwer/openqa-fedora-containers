@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-REPOSITORY=openqa_worker
+REPOSITORY=opensuse_worker
 WORKER_CLASS=qemu_x86_64
 
 usage() {
@@ -9,7 +9,7 @@ usage() {
 			  [-b|-h] \
 			  [-c <WORKER_CLASS>]\n \
 			  [-d <openQA_debug_path>]\n \
-			  [-f <test_debug_path>]\n \
+			  [-f <os-autoinst-distri-fedora>]\n \
 			  [-g <os-autoinst_debug_path>]\n"
 	echo -e "\nOptions:"
 	echo "	-b	Build the worker container image."
@@ -162,7 +162,9 @@ if echo "$WORKER_CLASS" | grep -q "tap";  then
 		exit 1
 	fi
 	# Note podman will provide /dev/net/tun automatically, don't need to add --device=/dev/net/tun
-	tap_arg="--network=podman --privileged "
+	# tap_arg="--network=my_fed --privileged "
+	tap_arg="--privileged -v /tmp/run/openqa:/run/openqa -v /tmp:/tmp "
+
 
 	# Adds new function to discover dynamic ip of container when it holds the server test
 	# tap_arg+=" -v $PWD/dynamic_server.pm:/usr/share/openqa/lib/OpenQA/Worker/Engines/dynamic_server.pm:z "
@@ -197,6 +199,8 @@ for i in $(seq 1 $number_of_workers); do
 	fi
 
 	podman run \
+	--init \
+	--security-opt label=disable \
 	--device=/dev/kvm \
 	--pids-limit=-1 \
 	${tap_arg} \

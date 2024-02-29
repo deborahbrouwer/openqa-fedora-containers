@@ -4,13 +4,12 @@ set -e
 
 function cleanup() {
 	echo "Return ownership of bound directories back to container host."
-	chown -R root:root /var/lib/openqa/ /usr/share/openqa/
+	chown -R root:root /var/lib/openqa/ /usr/share/openqa/ /run/openqa
 	exit
 }
 trap cleanup SIGTERM SIGINT
 
 # update the openqa package
-dnf -y upgrade --enablerepo=updates-testing --refresh --advisory=FEDORA-2024-b44061e715
 
 if [[ -z $OPENQA_WORKER_INSTANCE ]]; then
 	OPENQA_WORKER_INSTANCE=1
@@ -58,26 +57,32 @@ if echo "$WORKER_CLASS" | grep -q "tap"; then
 	# --> os-autoinst-:There is no systemd in the container so ignore the dbus failures
 	perl -i -pe 'BEGIN{undef $/;} s/(sub start_qemu \(\$self\) {\s*\n\s*my \$vars = \\\%bmwqemu::vars;)/$1\n		\$vars->{QEMU_NON_FATAL_DBUS_CALL} = 1;/smg' /usr/lib/os-autoinst/backend/qemu.pm
 
-	dnf install -y openvswitch iputils iptables nmap
-	/usr/share/openvswitch/scripts/openvswitch.init start
-	ovs-vsctl add-br br0;
-	ip addr add 172.16.2.2/24 dev br0;
-	ip link set br0 up;
-	ovs-vsctl add-port br0 tap$(($OPENQA_WORKER_INSTANCE - 1));
-	tunctl -u _openqa-worker -p -t tap$(($OPENQA_WORKER_INSTANCE - 1));
-	ip link set tap$(($OPENQA_WORKER_INSTANCE - 1)) up;
-	ip link set br0 up;
-	ip link set ovs-system up;
+
+	chown -R _openqa-worker /run/openqa && \
+	chmod -R a+rw /run/openqa
+	# dnf install -y iputils iptables nmap
+	# dnf install -y openvswitch iputils iptables nmap
+	# /usr/share/openvswitch/scripts/openvswitch.init start
+	# ovs-vsctl add-br br0;
+	# ip addr add 172.16.2.2/24 dev br0;
+	# ip link set br0 up;
+	# ovs-vsctl add-port br0 tap$(($OPENQA_WORKER_INSTANCE - 1));
+	# tunctl -u _openqa-worker -p -t tap$(($OPENQA_WORKER_INSTANCE - 1));
+	# ip link set tap$(($OPENQA_WORKER_INSTANCE - 1)) up;
+	# ip link set br0 up;
+	# ip link set ovs-system up;
 
 	# All traffic from qemu vm is masked so that it looks like it's coming from the container
+
 	iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+	iptables -t nat -L --line-numbers -n -v
 
 	# make sure ip forwarding is enabled
 	echo 1 > /proc/sys/net/ipv4/ip_forward
 
 	# Depending on what test this worker receives, it will need to dynamically adjust its iptables; give it that authority
-	echo "_openqa-worker ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/_openqa-worker
-	chmod 440 /etc/sudoers.d/_openqa-worker
+	# echo "_openqa-worker ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/_openqa-worker
+	# chmod 440 /etc/sudoers.d/_openqa-worker
 
 	# --> openQA: add new function to dynamically find the server's ip after the tests are scheduled
 	# lib_path="/usr/share/openqa/lib/OpenQA/Worker/Engines/isotovideo.pm"
