@@ -55,7 +55,8 @@ fi
 
 if echo "$WORKER_CLASS" | grep -q "tap"; then
 	# --> os-autoinst-:There is no systemd in the container so ignore the dbus failures
-	perl -i -pe 'BEGIN{undef $/;} s/(sub start_qemu \(\$self\) {\s*\n\s*my \$vars = \\\%bmwqemu::vars;)/$1\n		\$vars->{QEMU_NON_FATAL_DBUS_CALL} = 1;/smg' /usr/lib/os-autoinst/backend/qemu.pm
+	# this is temporary until it's added to the fedora tap tests
+	# perl -i -pe 'BEGIN{undef $/;} s/(sub start_qemu \(\$self\) {\s*\n\s*my \$vars = \\\%bmwqemu::vars;)/$1\n		\$vars->{QEMU_NON_FATAL_DBUS_CALL} = 1;/smg' /usr/lib/os-autoinst/backend/qemu.pm
 	chown -R _openqa-worker $vde_switch_path && \
 		chmod -R a+rwx $vde_switch_path
 	echo 1 > /proc/sys/net/ipv4/ip_forward
