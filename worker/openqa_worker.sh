@@ -149,32 +149,44 @@ else
 	test_arg="-v $PWD/tests:/var/lib/openqa/share/tests:z "
 fi
 
-sed -i "/^WORKER_CLASS/c\WORKER_CLASS=$WORKER_CLASS" workers.ini
-echo "set 'WORKER_CLASS = $WORKER_CLASS'"
-
-
 dns=$(/usr/bin/resolvectl status | grep Servers | tail -1 | cut -d: -f2-)
 if [ -z $dns ]; then
 	dns=8.8.8.8
 fi
 dns_arg="--dns $dns "
 
+sed -i "/^WORKER_CLASS/c\WORKER_CLASS=$WORKER_CLASS" workers.ini
+echo "set 'WORKER_CLASS = $WORKER_CLASS'"
+
 if echo "$WORKER_CLASS" | grep -q "tap";  then
-	if ! lsmod | grep -q openvswitch; then
-		echo "Warning: 'modprobe openvswitch' is required to run tap-class worker."
-		exit 1
-	fi
+
 	if [ "$(cat /proc/sys/net/ipv4/ip_forward)" -ne 1 ]; then
 		echo "Warning: IP forwarding is disabled. Add net.ipv4.ip_forward=1: to /etc/sysctl.conf and reload with sysctl -p"
 		exit 1
 	fi
-	# Note podman will provide /dev/net/tun automatically, don't need to add --device=/dev/net/tun
-	# tap_arg="--network=my_fed --privileged "
-	tap_arg="--privileged -v /tmp/run/openqa:/run/openqa -v /tmp:/tmp "
 
+	vde_switch_path="qa-switch"
+	qemu_host_ip="172.16.2.2"
+	if ! podman ps --format "{{.Names}}" | grep -q "openqa-vde-switch"; then
+		if ! podman image exists debian:bookworm-slim; then
+			podman pull debian:bookworm-slim
+		fi
+		rm /tmp/$vde_switch_path -rf
+		mkdir /tmp/$vde_switch_path
+		podman run --name openqa-vde-switch -i --rm --init --security-opt label=disable \
+			-v /tmp/$vde_switch_path:/$vde_switch_path --detach debian:bookworm-slim bash -c "
+			set -uex
+			apt-get update
+			apt-get install -y --no-install-recommends vde2
+			vde_switch --sock /$vde_switch_path/vde --daemon
+			slirpvde --sock /$vde_switch_path/vde --host $qemu_host_ip --dns $dns
+			"
+		while [ ! -e /tmp/$vde_switch_path/vde/ctl ]; do
+			sleep 1
+		done
+	fi
 
-	# Adds new function to discover dynamic ip of container when it holds the server test
-	# tap_arg+=" -v $PWD/dynamic_server.pm:/usr/share/openqa/lib/OpenQA/Worker/Engines/dynamic_server.pm:z "
+	vde_arg="--privileged -v /tmp/$vde_switch_path:/$vde_switch_path -e vde_switch_path=$vde_switch_path"
 fi
 
 OPENQA_WORKER_INSTANCE=1
@@ -197,6 +209,7 @@ for i in $(seq 1 $number_of_workers); do
 		fi
 	done
 
+
 	DEVELOPER_MODE_PORT=$((OPENQA_WORKER_INSTANCE * 10 + 20003))
 	VNC_PORT=$((OPENQA_WORKER_INSTANCE + 5990))
 	# Run all the workers detached except the last one
@@ -211,7 +224,7 @@ for i in $(seq 1 $number_of_workers); do
 	--device=/dev/kvm \
 	--pids-limit=-1 \
 	${dns_arg} \
-	${tap_arg} \
+	${vde_arg} \
 	${detached_arg} \
 	-e OPENQA_WORKER_INSTANCE=$OPENQA_WORKER_INSTANCE \
 	-e WORKER_CLASS=$WORKER_CLASS \
