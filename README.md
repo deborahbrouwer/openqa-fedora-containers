@@ -3,13 +3,11 @@
 
 - [About](#about)
 - [The web UI container](#The-web-UI-container)
-    - [CLI usage web](#cli-usage-web)
     - [Web Configuration](#web-configuration)
     - [Login](#login)
     - [Loading Tests](#loading-tests)
     - [Scheduling Tests](#scheduling-tests)
 - [The worker container](#The-worker-container)
-    - [CLI usage worker](#cli-usage-worker)
     - [Worker Configuration](#worker-configuration)
     - [Running workers](#running-workers)
     - [Stopping workers](#stopping-workers)
@@ -28,20 +26,6 @@ Several directories are kept on the host and are bound into the web UI container
 * `iso/`: holds iso files for testing.
   
 Delete any of these directories to force their reinitialization by the container scripts.
-
-### CLI usage web 
-```bash
-./openqa_web.sh -h
-
-Usage: ./openqa_web.sh [-b|-c|-h][-d <openQA_debug_path>]
-
-Run the webUI container with './openqa_web.sh'
-Options:
-	-b	Build the web UI container image.
-	-c	Get and run createhdds to provide images unavailable through fedoraproject.org.
-	-h	Show this help message.
-	-d	For debugging: specify a local path to openQA repository.
-```
 
 ### Web Configuration    
 
@@ -67,24 +51,24 @@ The BUILDURLs are frequently updated so find the latest from `https://openqa.fed
 
 ```bash
 podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
-fcosbuild -f https://builds.coreos.fedoraproject.org/prod/streams/testing-devel/builds/39.20240220.20.1/x86_64'
+fcosbuild -f https://builds.coreos.fedoraproject.org/prod/streams/testing-devel/builds/39.20240229.20.0/x86_64'
 ```
 
 ```bash
 podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
-compose -f https://kojipkgs.fedoraproject.org/compose/cloud/Fedora-Cloud-39-20240220.0/compose'
+compose -f https://kojipkgs.fedoraproject.org/compose/cloud/Fedora-Cloud-39-20240301.0/compose'
 ```
 
 ```bash
 podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
 compose -f --flavors Cloud_Base-qcow2-qcow2 \
-https://kojipkgs.fedoraproject.org/compose/rawhide/Fedora-Rawhide-20240220.n.0/compose'
+https://kojipkgs.fedoraproject.org/compose/rawhide/Fedora-Rawhide-20240301.n.0/compose'
 ```
 
 ```bash
 podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
 compose -f --flavors Server-dvd-iso \
-https://kojipkgs.fedoraproject.org/compose/branched/Fedora-40-20240221.n.0/compose'
+https://kojipkgs.fedoraproject.org/compose/branched/Fedora-40-20240301.n.0/compose'
 ```
 
 Alternatively, tests can be run with `openqa-cli`.
@@ -112,23 +96,6 @@ VERSION=Rawhide
 ```
 
 # The worker container
-
-### CLI usage worker
-```bash
-./openqa_worker.sh
-
-Usage: ./openqa_worker.sh -n NUMBER_OF_WORKERS [-b|-h] [-c <WORKER_CLASS>] [-d <openQA_debug_path>] [-g <os-autoinst_debug_path>]
-
-Options:
-	-b	Build the worker container image.
-	-c	set WORKER_CLASS; default is 'qemu_x86_64,tap,tap2'
-	-h	Show this help message
-	-d	For debugging: specify a local path to openQA repository
-	-g	For debugging: specify a local path to os-autoinst repository
-	-n	Number of openqa_worker containers to run.
-
-Stop all worker containers gracefully with '-n 0'
-```
 
 ### Worker Configuration    
   `client.conf`  
