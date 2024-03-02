@@ -152,6 +152,13 @@ fi
 sed -i "/^WORKER_CLASS/c\WORKER_CLASS=$WORKER_CLASS" workers.ini
 echo "set 'WORKER_CLASS = $WORKER_CLASS'"
 
+
+dns=$(/usr/bin/resolvectl status | grep Servers | tail -1 | cut -d: -f2-)
+if [ -z $dns ]; then
+	dns=8.8.8.8
+fi
+dns_arg="--dns $dns "
+
 if echo "$WORKER_CLASS" | grep -q "tap";  then
 	if ! lsmod | grep -q openvswitch; then
 		echo "Warning: 'modprobe openvswitch' is required to run tap-class worker."
@@ -203,6 +210,7 @@ for i in $(seq 1 $number_of_workers); do
 	--security-opt label=disable \
 	--device=/dev/kvm \
 	--pids-limit=-1 \
+	${dns_arg} \
 	${tap_arg} \
 	${detached_arg} \
 	-e OPENQA_WORKER_INSTANCE=$OPENQA_WORKER_INSTANCE \
