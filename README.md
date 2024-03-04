@@ -53,6 +53,10 @@ The BUILDURLs are frequently updated so find the latest from `https://openqa.fed
 podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
 fcosbuild -f https://builds.coreos.fedoraproject.org/prod/streams/testing-devel/builds/39.20240229.20.0/x86_64'
 ```
+```bash
+podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
+fcosbuild -f  	https://builds.coreos.fedoraproject.org/prod/streams/rawhide/builds/41.20240302.91.0/x86_64'
+```
 
 ```bash
 podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
