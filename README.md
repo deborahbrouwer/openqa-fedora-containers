@@ -65,8 +65,8 @@ compose -f https://kojipkgs.fedoraproject.org/compose/cloud/Fedora-Cloud-39-2024
 
 ```bash
 podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
-compose -f --flavors Cloud_Base-qcow2-qcow2 \
-https://kojipkgs.fedoraproject.org/compose/rawhide/Fedora-Rawhide-20240301.n.0/compose'
+compose -f --flavors Server-dvd-iso \
+https://kojipkgs.fedoraproject.org/compose/rawhide/Fedora-Rawhide-20240304.n.0/compose'
 ```
 
 ```bash
