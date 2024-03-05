@@ -99,6 +99,10 @@ TEST=upgrade_realmd_client \
 VERSION=Rawhide
 ```
 
+To cancel jobs:  
+`for JOB_ID in {226..342}; do openqa-cli api -X POST jobs/$JOB_ID/cancel; done`
+
+
 # The worker container
 
 ### Worker Configuration    
