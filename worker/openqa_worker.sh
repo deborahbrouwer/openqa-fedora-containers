@@ -172,12 +172,6 @@ sed -i "/^WORKER_CLASS/c\WORKER_CLASS=$WORKER_CLASS" workers.ini
 echo "set 'WORKER_CLASS = $WORKER_CLASS'"
 
 if echo "$WORKER_CLASS" | grep -q "vde";  then
-
-	if [ "$(cat /proc/sys/net/ipv4/ip_forward)" -ne 1 ]; then
-		echo "Warning: IP forwarding is disabled. Add net.ipv4.ip_forward=1: to /etc/sysctl.conf and reload with sysctl -p"
-		exit 1
-	fi
-
 	BUILD=$(echo "$WORKER_CLASS" | grep -o 'vde_[^,]*' | cut -d'_' -f2-)
 	vde_switch_path="qa-switch_$BUILD"
 	echo "worker on $vde_switch_path"
