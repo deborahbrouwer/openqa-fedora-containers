@@ -106,14 +106,12 @@ mapfile -t worker_container_ids < <(podman ps -q --format "{{.Image}} {{.ID}}" |
 # Stop all the workers gracefully, by giving them the opportunity to tell the scheduler
 # that they are going offline. Otherwise scheduler will keep trying to send tests to non-existent workers.
 if [ $number_of_workers -le 0 ]; then
-
 	if [ -z $WORKER_CLASS ]; then
 		for container_id in "${worker_container_ids[@]}"; do
 			process_id=$(podman exec "$container_id" pgrep -f 'perl /usr/share/openqa/script/worker' | head -n 1)
 			podman exec -it $container_id sh -c "kill $process_id"
 			echo "killed $container_id"
 		done
-		exit
 	else
 		BUILD=$(echo "$WORKER_CLASS" | grep -o 'vde_[^,]*' | cut -d'_' -f2-)
 		matching_container_ids=($(podman ps -a --format "{{.Names}}" | grep "$BUILD" | grep -v "qa-switch"))
@@ -124,6 +122,7 @@ if [ $number_of_workers -le 0 ]; then
 			echo "killed $actual_container_id"
 		done
 	fi
+	exit
 fi
 
 if [ -n "$openQA_debug_path"  ]; then
@@ -157,11 +156,6 @@ else
 	test_arg="-v $PWD/tests:/var/lib/openqa/share/tests:z "
 fi
 
-dns=$(/usr/bin/resolvectl status | grep Servers | tail -1 | cut -d: -f2-)
-if [ -z $dns ]; then
-	dns=8.8.8.8
-fi
-dns_arg="--dns $dns "
 
 if [ -z $WORKER_CLASS ]; then
 	WORKER_CLASS=qemu_x86_64
@@ -176,6 +170,7 @@ if echo "$WORKER_CLASS" | grep -q "vde";  then
 	vde_switch_path="qa-switch_$BUILD"
 	echo "worker on $vde_switch_path"
 	qemu_host_ip="172.16.2.2"
+	dns=$(/usr/bin/resolvectl status | grep Servers | tail -1 | cut -d: -f2-)
 	if ! podman ps --format "{{.Names}}" | grep -q $vde_switch_path; then
 		if ! podman image exists debian:bookworm-slim; then
 			podman pull debian:bookworm-slim
@@ -194,10 +189,7 @@ if echo "$WORKER_CLASS" | grep -q "vde";  then
 			sleep 1
 		done
 	fi
-
-	#TODO is privileged still necessary ?
-	vde_arg="--privileged \
-			-v /tmp/$vde_switch_path:/$vde_switch_path \
+	vde_arg="-v /tmp/$vde_switch_path:/$vde_switch_path \
 			-e vde_switch_path=$vde_switch_path "
 fi
 
@@ -238,7 +230,6 @@ for i in $(seq 1 $number_of_workers); do
 	--security-opt label=disable \
 	--device=/dev/kvm \
 	--pids-limit=-1 \
-	${dns_arg} \
 	${vde_arg} \
 	${detached_arg} \
 	-e OPENQA_WORKER_INSTANCE=$OPENQA_WORKER_INSTANCE \
