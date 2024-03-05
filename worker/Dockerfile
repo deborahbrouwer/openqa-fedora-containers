@@ -10,9 +10,13 @@ RUN zypper in -yl openQA-worker os-autoinst-s390-deps os-autoinst-ipmi-deps && \
     zypper in -yl kmod && \
     zypper in -yl qemu-ovmf-x86_64 && \
     zypper in -yl qemu-uefi-aarch64  && \
-	zypper in -yl vde2 vde2-slirp iptables iproute iputils wireshark && \
+    zypper in -yl vde2 vde2-slirp && \
+    zypper in -yl python3 python3-jsonschema gcc make curl perl-App-cpanminus e2fsprogs ovmf \
+        perl-SemVer perl-DateTime perl-NetAddr-IP perl-Test-Assert perl-JSON && \
     zypper clean && \
     mkdir -p /root/qemu
+
+RUN cpanm REST::Client
 
 # fix all ownership/permissions
 RUN chown -R _openqa-worker /usr/share/openqa /var/lib/openqa && \
