@@ -1,25 +1,21 @@
 #!/bin/bash
 set -e
 REPOSITORY=opensuse_worker
-WORKER_CLASS=qemu_x86_64
 
 usage() {
-	echo -e "\nUsage: $0 \
-			  -n NUMBER_OF_WORKERS\n \
-			  [-b|-h] \
-			  [-c <WORKER_CLASS>]\n \
-			  [-d <openQA_debug_path>]\n \
-			  [-f <os-autoinst-distri-fedora>]\n \
-			  [-g <os-autoinst_debug_path>]\n"
-	echo -e "\nOptions:"
+	echo -e "\nUsage: $0 -n NUMBER_OF_WORKERS [Options]\n"
+	echo -e "Options:"
 	echo "	-b	Build the worker container image."
-	echo "	-c	set WORKER_CLASS; default is 'qemu_x86_64'; e.g. -c qemu_x86_64,tap2"
+	echo "	-c	set WORKER_CLASS; default is 'qemu_x86_64'"
+	echo " 		vde tests specify the %BUILD% as part of WORKER_CLASS"
+	echo "		e.g. -c qemu_x86_64,vde_Fedora-CoreOS-41.20240302.91.0"
 	echo "	-h	Show this help message"
 	echo "	-d	For debugging: specify a local path to openQA repository"
 	echo "	-f	For debugging: specify a local path to os-autoinst-distri-fedora"
 	echo "	-g	For debugging: specify a local path to os-autoinst repository"
 	echo "	-n	Number of openqa_worker containers to run."
-	echo -e "\nStop all worker containers gracefully with '-n 0'"
+	echo "		Set -n0 to stop all workers gracefully."
+	echo "		Stop all workers of a certain class with -n0 -c WORKER_CLASS"
 	exit 1
 }
 
@@ -110,12 +106,24 @@ mapfile -t worker_container_ids < <(podman ps -q --format "{{.Image}} {{.ID}}" |
 # Stop all the workers gracefully, by giving them the opportunity to tell the scheduler
 # that they are going offline. Otherwise scheduler will keep trying to send tests to non-existent workers.
 if [ $number_of_workers -le 0 ]; then
-	for container_id in "${worker_container_ids[@]}"; do
-		process_id=$(podman exec "$container_id" pgrep -f 'perl /usr/share/openqa/script/worker' | head -n 1)
-		podman exec -it $container_id sh -c "kill $process_id"
-		echo "killed $container_id"
-	done
-	exit
+
+	if [ -z $WORKER_CLASS ]; then
+		for container_id in "${worker_container_ids[@]}"; do
+			process_id=$(podman exec "$container_id" pgrep -f 'perl /usr/share/openqa/script/worker' | head -n 1)
+			podman exec -it $container_id sh -c "kill $process_id"
+			echo "killed $container_id"
+		done
+		exit
+	else
+		BUILD=$(echo "$WORKER_CLASS" | grep -o 'vde_[^,]*' | cut -d'_' -f2-)
+		matching_container_ids=($(podman ps -a --format "{{.Names}}" | grep "$BUILD" | grep -v "qa-switch"))
+		for container_id in "${matching_container_ids[@]}"; do
+			actual_container_id=$(podman ps -a --filter "name=$container_id" --format "{{.ID}}")
+			process_id=$(podman exec "$actual_container_id" pgrep -f 'perl /usr/share/openqa/script/worker' | head -n 1)
+			podman exec -it "$actual_container_id" sh -c "kill $process_id"
+			echo "killed $actual_container_id"
+		done
+	fi
 fi
 
 if [ -n "$openQA_debug_path"  ]; then
@@ -155,25 +163,32 @@ if [ -z $dns ]; then
 fi
 dns_arg="--dns $dns "
 
+if [ -z $WORKER_CLASS ]; then
+	WORKER_CLASS=qemu_x86_64
+fi
+
+
 sed -i "/^WORKER_CLASS/c\WORKER_CLASS=$WORKER_CLASS" workers.ini
 echo "set 'WORKER_CLASS = $WORKER_CLASS'"
 
-if echo "$WORKER_CLASS" | grep -q "tap";  then
+if echo "$WORKER_CLASS" | grep -q "vde";  then
 
 	if [ "$(cat /proc/sys/net/ipv4/ip_forward)" -ne 1 ]; then
 		echo "Warning: IP forwarding is disabled. Add net.ipv4.ip_forward=1: to /etc/sysctl.conf and reload with sysctl -p"
 		exit 1
 	fi
 
-	vde_switch_path="qa-switch"
+	BUILD=$(echo "$WORKER_CLASS" | grep -o 'vde_[^,]*' | cut -d'_' -f2-)
+	vde_switch_path="qa-switch_$BUILD"
+	echo "worker on $vde_switch_path"
 	qemu_host_ip="172.16.2.2"
-	if ! podman ps --format "{{.Names}}" | grep -q "openqa-vde-switch"; then
+	if ! podman ps --format "{{.Names}}" | grep -q $vde_switch_path; then
 		if ! podman image exists debian:bookworm-slim; then
 			podman pull debian:bookworm-slim
 		fi
 		rm /tmp/$vde_switch_path -rf
 		mkdir /tmp/$vde_switch_path
-		podman run --name openqa-vde-switch -i --rm --init --security-opt label=disable \
+		podman run --name $vde_switch_path -i --rm --init --security-opt label=disable \
 			-v /tmp/$vde_switch_path:/$vde_switch_path --detach debian:bookworm-slim bash -c "
 			set -uex
 			apt-get update
@@ -186,7 +201,10 @@ if echo "$WORKER_CLASS" | grep -q "tap";  then
 		done
 	fi
 
-	vde_arg="--privileged -v /tmp/$vde_switch_path:/$vde_switch_path -e vde_switch_path=$vde_switch_path"
+	#TODO is privileged still necessary ?
+	vde_arg="--privileged \
+			-v /tmp/$vde_switch_path:/$vde_switch_path \
+			-e vde_switch_path=$vde_switch_path "
 fi
 
 OPENQA_WORKER_INSTANCE=1
@@ -216,6 +234,9 @@ for i in $(seq 1 $number_of_workers); do
 	detached_arg="-d "
 	if [ $i -eq $number_of_workers ]; then
 		detached_arg="";
+	fi
+	if [ -n "$vde_arg" ]; then
+		vde_arg+=" --name ${BUILD}_${OPENQA_WORKER_INSTANCE} "
 	fi
 
 	podman run \
