@@ -1,0 +1,49 @@
+{
+    "EventLog": [
+        {
+            "PCRIndex": 0,
+            "EventType": "EV_S_CRTM_VERSION",
+            "Digests": {
+                "sha256": "0f1126ea6251db35b98a230b019a02d9df3d5e405756b413a6c15bfa6c71ae48"
+            },
+            "Event": "650064006b0032002d00320030003200330031003100320032002d00310034002e0066006300330039000000"
+        },
+        {
+            "PCRIndex": 0,
+            "EventType": "EV_EFI_PLATFORM_FIRMWARE_BLOB",
+            "VolumeName": "PEIFV",
+            "Digests": {
+                "sha256": "d92f3c39c32bf244dd6ac6f6f0a5384049e24f371b9faab78311df3f49d60542"
+            },
+            "Event": {
+                "BlobLength": 917504
+            }
+        },
+        {
+            "PCRIndex": 0,
+            "EventType": "EV_EFI_PLATFORM_FIRMWARE_BLOB",
+            "VolumeName": "DXEFV",
+            "Digests": {
+                "sha256": "5a15b73e407637cfe988e7b07d49d50929998591f37c12fee4f91edff30f0f74"
+            },
+            "Event": {
+                "BlobLength": 15204352
+            }
+        },
+        {
+            "PCRIndex": 0,
+            "EventType": "EV_SEPARATOR",
+            "Digests": {
+                "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
+            }
+        }
+    ],
+    "PCRs": [
+        {
+            "PCRIndex": 0,
+            "Values": {
+                "sha256": "c828904124901ea0604997aaf138b9466f9e999d1b3443471109047e997d31d3"
+            }
+        }
+    ]
+}

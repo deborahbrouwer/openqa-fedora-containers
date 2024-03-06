@@ -246,6 +246,7 @@ for i in $(seq 1 $number_of_workers); do
 	-v $PWD/workers.ini:/etc/openqa/workers.ini:z \
 	-v $PWD/client.conf:/etc/openqa/client.conf:z \
 	-v $PWD/init_openqa_worker.sh:/init_openqa_worker.sh:z \
+	-v $PWD/ovmf:/usr/share/edk2/ovmf:z \
 	${test_arg} \
 	${openqa_debug_arg} \
 	${osauto_debug_arg} \
