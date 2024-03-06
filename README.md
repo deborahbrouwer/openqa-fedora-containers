@@ -51,7 +51,7 @@ The BUILDURLs are frequently updated so find the latest from `https://openqa.fed
 
 ```bash
 podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
-fcosbuild -f https://builds.coreos.fedoraproject.org/prod/streams/testing-devel/builds/39.20240229.20.0/x86_64'
+fcosbuild -f https://builds.coreos.fedoraproject.org/prod/streams/testing-devel/builds/41.20240305.91.0/x86_64'
 ```
 ```bash
 podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
@@ -60,19 +60,19 @@ fcosbuild -f  	https://builds.coreos.fedoraproject.org/prod/streams/rawhide/buil
 
 ```bash
 podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
-compose -f https://kojipkgs.fedoraproject.org/compose/cloud/Fedora-Cloud-39-20240301.0/compose'
+compose -f https://kojipkgs.fedoraproject.org/compose/cloud/Fedora-Cloud-39-20240306.0/compose'
 ```
 
 ```bash
 podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
 compose -f --flavors Server-dvd-iso \
-https://kojipkgs.fedoraproject.org/compose/rawhide/Fedora-Rawhide-20240304.n.0/compose'
+https://kojipkgs.fedoraproject.org/compose/rawhide/Fedora-Rawhide-20240305.n.0/compose'
 ```
 
 ```bash
 podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
 compose -f --flavors Server-dvd-iso \
-https://kojipkgs.fedoraproject.org/compose/branched/Fedora-40-20240301.n.0/compose'
+https://kojipkgs.fedoraproject.org/compose/branched/Fedora-40-20240306.n.0/compose'
 ```
 
 Alternatively, tests can be run with `openqa-cli`.
