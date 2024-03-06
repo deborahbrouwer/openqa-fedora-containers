@@ -3,12 +3,7 @@ set -e
 REPOSITORY=openqa_webui
 
 usage() {
-		echo -e "\nUsage: $0 \
-				[-b|-c|-h] \
-				[-d <openQA_debug_path>] \
-				[-f <os_autoinst_distri_fedora_path>] \
-				[-s <fedora_openqa_debug_path>]"
-		echo -e "\nRun the webUI container with './openqa_web.sh'"
+		echo -e "\nUsage: $0 [Options]\n"
 		echo "Options:"
 		echo "	-b	Build the web UI container image."
 		echo "	-c	Get and run createhdds to provide images unavailable through fedoraproject.org."

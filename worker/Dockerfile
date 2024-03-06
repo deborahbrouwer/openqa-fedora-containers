@@ -8,10 +8,10 @@ RUN zypper in -yl openQA-worker os-autoinst-s390-deps os-autoinst-ipmi-deps && \
     zypper in -yl qemu-arm qemu-ppc qemu-x86 qemu-tools && \
     zypper in -yl qemu-hw-display-virtio-gpu qemu-hw-display-virtio-gpu-pci qemu-hw-display-virtio-vga && \
     zypper in -yl kmod && \
-    zypper in -yl qemu-ovmf-x86_64 && \
+    zypper in -yl qemu-ovmf-x86_64 ovmf ovmf-tools && \
     zypper in -yl qemu-uefi-aarch64  && \
     zypper in -yl vde2 vde2-slirp && \
-    zypper in -yl python3 python3-jsonschema gcc make curl perl-App-cpanminus e2fsprogs ovmf \
+    zypper in -yl python3 python3-jsonschema gcc make curl perl-App-cpanminus e2fsprogs \
         perl-SemVer perl-DateTime perl-NetAddr-IP perl-Test-Assert perl-JSON && \
     zypper clean && \
     mkdir -p /root/qemu

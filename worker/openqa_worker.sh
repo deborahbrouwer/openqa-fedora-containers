@@ -4,7 +4,8 @@ REPOSITORY=opensuse_worker
 
 usage() {
 	echo -e "\nUsage: $0 -n NUMBER_OF_WORKERS [Options]\n"
-	echo -e "Options:"
+	echo "Options:"
+	echo "	-a	Keep the last worker attached to stdout."
 	echo "	-b	Build the worker container image."
 	echo "	-c	set WORKER_CLASS; default is 'qemu_x86_64'"
 	echo " 		vde tests specify the %BUILD% as part of WORKER_CLASS"
@@ -47,8 +48,11 @@ build_openqa_worker_image() {
 
 cd $(dirname "$0")
 
-while getopts ":bc:hd:f:g:n:" opt; do
+while getopts ":abc:hd:f:g:n:" opt; do
 	case ${opt} in
+		a)
+			keep_attached=1
+			;;
 		b )
 			build_openqa_worker_image
 			exit
@@ -165,6 +169,8 @@ fi
 sed -i "/^WORKER_CLASS/c\WORKER_CLASS=$WORKER_CLASS" workers.ini
 echo "set 'WORKER_CLASS = $WORKER_CLASS'"
 
+autoinst_url_hostname=$(awk -F"=" '/AUTOINST_URL_HOSTNAME/{gsub(/ /, "", $2); print $2}' workers.ini)
+
 if echo "$WORKER_CLASS" | grep -q "vde";  then
 	BUILD=$(echo "$WORKER_CLASS" | grep -o 'vde_[^,]*' | cut -d'_' -f2-)
 	vde_switch_path="qa-switch_$BUILD"
@@ -193,6 +199,8 @@ if echo "$WORKER_CLASS" | grep -q "vde";  then
 			-e vde_switch_path=$vde_switch_path "
 fi
 
+detached_arg="-d "
+
 OPENQA_WORKER_INSTANCE=1
 for i in $(seq 1 $number_of_workers); do
 
@@ -216,9 +224,8 @@ for i in $(seq 1 $number_of_workers); do
 
 	DEVELOPER_MODE_PORT=$((OPENQA_WORKER_INSTANCE * 10 + 20003))
 	VNC_PORT=$((OPENQA_WORKER_INSTANCE + 5990))
-	# Run all the workers detached except the last one
-	detached_arg="-d "
-	if [ $i -eq $number_of_workers ]; then
+	# Run all the workers detached except the last one if attached option is added
+	if [[ $i -eq $number_of_workers ]] && [[ -n $keep_attached ]]; then
 		detached_arg="";
 	fi
 	if [ -n "$vde_arg" ]; then
