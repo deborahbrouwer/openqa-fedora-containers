@@ -29,9 +29,9 @@ Delete any of these directories to force their reinitialization by the container
 
 ### Web Configuration    
 
-`client.conf`  
- To authorize `fedora-openqa.py` to schedule tests, change the first line of client.conf `[172.31.1.1:8080]` to your web server address.  
->Note: If running it locally, don't just use `localhost` in this configuration because it will be interpreted as the container's localhost not the host's localhost
+|                           client.conf    |    |
+|----------------------------------------------------------------|---------------------------------|
+| `[172.31.1.1:8080]`                              | Authorize `fedora-openqa.py` to schedule tests. It's wrong to use `localhost` since this is the container's localhost.      |
 
 ### Login
 Login as `Demo` through the web UI
@@ -47,7 +47,7 @@ podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c 'cd /var/li
 >Note tests can't be scheduled if `client.conf` is not configured.  
 
 Here are some examples.
-The BUILDURLs are frequently updated so find the latest from `https://openqa.fedoraproject.org/`:   
+The BUILDURLs are frequently updated so find the latest from [https://openqa.fedoraproject.org/](https://openqa.fedoraproject.org/):   
 
 ```bash
 podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
@@ -106,20 +106,29 @@ To cancel jobs:
 # The worker container
 
 ### Worker Configuration    
-  `client.conf`  
-     * change `[172.31.1.1]` to the web UI host  
+|                           client.conf    |    |
+|----------------------------------------------------------------|---------------------------------|
+|`[172.31.1.1]`                                | The web UI host. Authorizes workers to carry out tests.      |
 
-    `workers.ini`  
-      * change `HOST = http://172.31.1.1:8080` to the web UI host  
-      * change `WORKER_HOSTNAME = 172.31.1.1` to the location where the web UI host can send commands to the worker for developer mode.  Setting the `WORKER_HOSTNAME` is crucial if the worker is running in a container because otherwise the worker will (falsely) advertise its container id as the best location to reach the worker.  
+|                            workers.ini    |    |
+|----------------------------------------------------------------|---------------------------------|
+| `HOST = http://172.31.1.1:8080`                                | The web UI host. It's wrong to use `localhost` since this is the container's localhost.       |
+| `WORKER_HOSTNAME = 172.31.1.1`                                 | For developer mode: the worker's location for receiving livelog. |
+| `AUTOINST_URL_HOSTNAME = 172.31.1.1`                           | For logging: the worker's location for receiving qemu logs.   |
+
 
 ### Running workers     
 For example, this command runs three workers:  
 `./openqa_worker.sh -n 3` 
 
-Note>Refresh your browser after starting the workers. Sometimes it will take a minute or two for the web and workers to start talking.  
+If a test needs a specific `WORKER_CLASS` set the worker class like this:  
+`./openqa_worker.sh -n2 -c qemu_x86_64,vde_Fedora-CoreOS-41.20240302.91.0`  
+
+There are options for using local repositories for debugging, e.g.:  
+`./openqa_worker.sh -n2 -c qemu_x86_64,vde_Fedora-CoreOS-41.20240305.91.0 -g ../../os-autoinst`  
 
 ### Stopping workers     
 `./openqa_worker.sh -n 0`  
 >The workers need to tell the web UI that they are stopping and will no longer be available to accept tests.  If the workers are not stopped gracefully, the web UI will slow down substantially as it continues to send tests to unavailable workers.  
+
 
