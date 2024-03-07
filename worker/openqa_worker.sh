@@ -169,8 +169,6 @@ fi
 sed -i "/^WORKER_CLASS/c\WORKER_CLASS=$WORKER_CLASS" workers.ini
 echo "set 'WORKER_CLASS = $WORKER_CLASS'"
 
-autoinst_url_hostname=$(awk -F"=" '/AUTOINST_URL_HOSTNAME/{gsub(/ /, "", $2); print $2}' workers.ini)
-
 if echo "$WORKER_CLASS" | grep -q "vde";  then
 	BUILD=$(echo "$WORKER_CLASS" | grep -o 'vde_[^,]*' | cut -d'_' -f2-)
 	vde_switch_path="qa-switch_$BUILD"
@@ -195,8 +193,19 @@ if echo "$WORKER_CLASS" | grep -q "vde";  then
 			sleep 1
 		done
 	fi
+
+	# AUTOINST_URL_HOSTNAME is used when a test running in qemu wants to upload logs to its host
+	# For netdev = user, the default 172.16.2.2 is the container so this works fine
+	# But for netdev = vde, 172.16.2.2 is the gateway of the switch so we have
+	# to set AUTOINST_URL_HOSTNAME to the WORKER_HOSTNAME and come back to the container through its open port
+	# See os-autoinst/testapi.pm autoinst_url() and upload_logs()
+	WORKER_HOSTNAME_IP=$(grep 'WORKER_HOSTNAME' workers.ini | head -1 | awk -F '= ' '{print $2}')
+	sed -i "/AUTOINST_URL_HOSTNAME/c\AUTOINST_URL_HOSTNAME=$WORKER_HOSTNAME_IP" workers.ini
+
 	vde_arg="-v /tmp/$vde_switch_path:/$vde_switch_path \
 			-e vde_switch_path=$vde_switch_path "
+else
+	sed -i "/^AUTOINST_URL_HOSTNAME/c\# AUTOINST_URL_HOSTNAME" workers.ini
 fi
 
 detached_arg="-d "
