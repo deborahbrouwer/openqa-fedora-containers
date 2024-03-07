@@ -176,7 +176,7 @@ if echo "$WORKER_CLASS" | grep -q "vde";  then
 	vde_switch_path="qa-switch_$BUILD"
 	echo "worker on $vde_switch_path"
 	qemu_host_ip="172.16.2.2"
-	dns=$(/usr/bin/resolvectl status | grep Servers | tail -1 | cut -d: -f2-)
+	dns=$(/usr/bin/resolvectl status | grep Servers | tail -1 | cut -d: -f2- | tr ' ' '\n' | grep -oP '^\d{1,3}(\.\d{1,3}){3}$')
 	if ! podman ps --format "{{.Names}}" | grep -q $vde_switch_path; then
 		if ! podman image exists debian:bookworm-slim; then
 			podman pull debian:bookworm-slim
