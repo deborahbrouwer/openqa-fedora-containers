@@ -176,20 +176,17 @@ if echo "$WORKER_CLASS" | grep -q "vde";  then
 	qemu_host_ip="172.16.2.2"
 	dns=$(/usr/bin/resolvectl status | grep Servers | tail -1 | cut -d: -f2- | tr ' ' '\n' | grep -oP '^\d{1,3}(\.\d{1,3}){3}$')
 	if ! podman ps --format "{{.Names}}" | grep -q $vde_switch_path; then
-		if ! podman image exists debian:bookworm-slim; then
-			podman pull debian:bookworm-slim
-		fi
 		rm /tmp/$vde_switch_path -rf
 		mkdir /tmp/$vde_switch_path
 		podman run --name $vde_switch_path -i --rm --init --security-opt label=disable \
-			-v /tmp/$vde_switch_path:/$vde_switch_path --detach debian:bookworm-slim bash -c "
+			-v /tmp/$vde_switch_path:/$vde_switch_path --detach tumbleweed:latest bash -c "
 			set -uex
-			apt-get update
-			apt-get install -y --no-install-recommends vde2
-			vde_switch --sock /$vde_switch_path/vde --daemon
-			slirpvde --sock /$vde_switch_path/vde --host $qemu_host_ip --dns $dns
+			zypper update -y
+			zypper in -y vde2 vde2-slirp
+			vde_switch --sock /$vde_switch_path/vde.ctl --daemon
+			slirpvde --sock /$vde_switch_path/vde.ctl --host $qemu_host_ip --dns $dns
 			"
-		while [ ! -e /tmp/$vde_switch_path/vde/ctl ]; do
+		while [ ! -e /tmp/$vde_switch_path/vde.ctl ]; do
 			sleep 1
 		done
 
