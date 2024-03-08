@@ -192,6 +192,11 @@ if echo "$WORKER_CLASS" | grep -q "vde";  then
 		while [ ! -e /tmp/$vde_switch_path/vde/ctl ]; do
 			sleep 1
 		done
+
+		if ! podman ps --format "{{.Names}}" | grep -q $vde_switch_path; then
+			echo "Error creating vde switch. Exit without starting worker."
+			exit
+		fi
 	fi
 
 	# AUTOINST_URL_HOSTNAME is used when a test running in qemu wants to upload logs to its host
