@@ -31,7 +31,7 @@ Delete any of these directories to force their reinitialization by the container
 
 |                           client.conf    |    |
 |----------------------------------------------------------------|---------------------------------|
-| `[172.31.1.1:8080]`                              | Authorize `fedora-openqa.py` to schedule tests. It's wrong to use `localhost` since this is the container's localhost.      |
+| `[172.31.1.1]`                              | Authorize `fedora-openqa.py` to schedule tests. It's wrong to use `localhost` since this is the container's localhost.      |
 
 ### Login
 Login as `Demo` through the web UI
