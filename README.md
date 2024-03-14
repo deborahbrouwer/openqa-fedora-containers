@@ -44,7 +44,7 @@ podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c 'cd /var/li
    
 ### Scheduling Tests
 
->Note tests can't be scheduled if `client.conf` is not configured.  
+>Note tests can't be scheduled if `client.conf` is not configured.  And it must be configured __before__ the web server starts.
 
 Here are some examples.
 The BUILDURLs are frequently updated so find the latest from [https://openqa.fedoraproject.org/](https://openqa.fedoraproject.org/):   
