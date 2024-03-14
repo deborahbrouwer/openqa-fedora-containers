@@ -4,7 +4,7 @@ LABEL title="openqa_webui"
 
 RUN dnf install -y openqa openqa-local-db \
 	openqa-httpd mod_ssl mod_proxy_html mod_session \
-	perl-Mojolicious \
+	perl-Mojolicious perl-Mojolicious-Plugin-AssetPack \
 	ruby-devel 'rubygem(sass)' fedora-messaging python3-jsonschema wget
 
 # get test scheduler, fedora_openqa, and packages that it needs
