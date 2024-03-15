@@ -34,7 +34,13 @@ Delete any of these directories to force their reinitialization by the container
 | `[172.31.1.1:8080]`                              | Authorize `fedora-openqa.py` to schedule tests. It's wrong to use `localhost` since this is the container's localhost.      |
 
 ### Login
-Login as `Demo` through the web UI
+Login through the web UI using your Fedora Account.  
+https://accounts.fedoraproject.org  
+
+Initially when you login to the web UI, you are just a `user` without any privileges.  
+The administrator can promote you to `operator` using the administrator's menu in the web UI.  An operator can run and control the tests.  
+There can only be one administrator.  To create the first administrator in a new database, from within the web UI container:    
+`su geekotest; /usr/share/openqa/script/create_admin fake_admin`  
 
 ### Loading Tests  
 ```bash
