@@ -197,6 +197,7 @@ if [ -n "$fedora_openqa_debug_path" ]; then
 fi
 
 podman run -p 8080:80 \
+--network=slirp4netns \
 -v $PWD/hdd:/var/lib/openqa/share/factory/hdd:z \
 -v $PWD/iso:/var/lib/openqa/share/factory/iso:z \
 -v $PWD/data:/var/lib/pgsql/data/:z \

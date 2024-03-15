@@ -248,6 +248,7 @@ for i in $(seq 1 $number_of_workers); do
 	--security-opt label=disable \
 	--device=/dev/kvm \
 	--pids-limit=-1 \
+	--network=slirp4netns \
 	${vde_arg} \
 	${detached_arg} \
 	-e OPENQA_WORKER_INSTANCE=$OPENQA_WORKER_INSTANCE \
