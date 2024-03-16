@@ -27,7 +27,8 @@ function start_services() {
 }
 
 function start_database() {
-  chown -R postgres:postgres /var/lib/pgsql && \
+  mkdir -p /var/run/postgresql
+  chown -R postgres:postgres /var/lib/pgsql /var/run/postgresql && \
     find /var/lib/pgsql/data -type d -exec chmod 750 {} + && \
     find /var/lib/pgsql/data -type f -exec chmod 750 {} +
 
