@@ -15,8 +15,6 @@ RUN dnf install -y fedfind python3-pip && \
 
 RUN ln -s /etc/httpd/conf.modules.d/00-base.conf /etc/httpd/conf.modules.d/00-base.load
 RUN ln -s /etc/httpd/conf.modules.d/00-ssl.conf /etc/httpd/conf.modules.d/00-ssl.load
-RUN cp /etc/httpd/conf.d/openqa-ssl.conf.template /etc/httpd/conf.d/openqa-ssl.conf
-RUN cp /etc/httpd/conf.d/openqa.conf.template /etc/httpd/conf.d/openqa.conf
 RUN /usr/libexec/httpd-ssl-gencerts
 
 # fix all ownership/permissions

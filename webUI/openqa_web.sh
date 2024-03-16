@@ -196,15 +196,18 @@ if [ -n "$fedora_openqa_debug_path" ]; then
 	fedora_openqa_debug_arg="-v $fedora_openqa_debug_path/:/fedora_openqa:z "
 fi
 
-podman run -p 8080:80 \
+podman run -p 8080:80 -p 1443:443 \
 --network=slirp4netns \
 -v $PWD/hdd:/var/lib/openqa/share/factory/hdd:z \
 -v $PWD/iso:/var/lib/openqa/share/factory/iso:z \
 -v $PWD/data:/var/lib/pgsql/data/:z \
 -v $PWD/client.conf:/etc/openqa/client.conf:z \
 -v $PWD/openqa.ini:/etc/openqa/openqa.ini:z \
+-v $PWD/openqa-ssl.conf:/etc/httpd/conf.d/openqa-ssl.conf:z \
+-v $PWD/openqa.conf:/etc/httpd/conf.d/openqa.conf:z \
 -v $PWD/init_openqa_web.sh:/init_openqa_web.sh:z \
 ${os_autoinst_distri_fedora_arg} \
 ${openqa_debug_arg} \
 ${fedora_openqa_debug_arg} \
 --rm -it $OPENQA_WEBUI_IMAGE_ID
+

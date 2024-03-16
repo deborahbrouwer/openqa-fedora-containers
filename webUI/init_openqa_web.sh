@@ -50,6 +50,20 @@ function start_database() {
   # TODO: use upgradedb script here if necessary for real data
 }
 
+function add_cert() {
+  # The default crt/key pairs are set in /etc/httpd/conf.d/ssl.conf
+  # Adding /etc/httpd/conf.d/openqa-ssl.conf will override the defaults
+  # openqa-ssl.conf names the crt/keys to use
+
+  # Use defaults until ready to bind in real cert and keys with
+  # -v $PWD/openqa.crt:/etc/pki/tls/certs/openqa.crt:z \
+  # -v $PWD/openqa.key:/etc/pki/tls/private/openqa.key:z \
+    local mojo_resources=$(perl -e 'use Mojolicious; print(Mojolicious->new->home->child("Mojo/IOLoop/resources"))')
+    cp "$mojo_resources"/server.crt /etc/pki/tls/certs/openqa.crt
+    cp "$mojo_resources"/server.key /etc/pki/tls/private/openqa.key
+    cp "$mojo_resources"/server.crt /etc/pki/tls/certs/ca.crt
+}
+
 usermod --shell /bin/sh geekotest
 
 # TODO when quay.io/fedora/fedora images starts using Fedora 40, this can be removed
@@ -91,6 +105,7 @@ git -C /fedora_openqa pull || true
 chown -R geekotest /usr/share/openqa /var/lib/openqa && \
 	chmod -R a+rw /usr/share/openqa /var/lib/openqa
 
+add_cert
 start_database
 start_services
 
