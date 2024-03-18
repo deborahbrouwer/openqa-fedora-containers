@@ -22,7 +22,7 @@ function start_services() {
   su geekotest -c /usr/share/openqa/script/openqa-websockets-daemon &
   su geekotest -c /usr/share/openqa/script/openqa-gru &
   su geekotest -c /usr/share/openqa/script/openqa-livehandler-daemon &
-  httpd
+  httpd -DSSL
   su geekotest -c /usr/share/openqa/script/openqa-webui-daemon
 }
 
