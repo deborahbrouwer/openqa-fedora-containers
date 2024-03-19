@@ -171,7 +171,7 @@ if [ -n "$openQA_debug_path"  ]; then
 			openQA_debug_path=${openQA_debug_path%/}
 	fi
 	openqa_debug_arg="-v $openQA_debug_path/script/:/usr/share/openqa/script/:z \
-		-v $openQA_debug_path/lib/OpenQA/:/usr/share/openqa/lib/OpenQA/:z \
+		-v $openQA_debug_path/lib/:/usr/share/openqa/lib/:z \
 		-v $openQA_debug_path/assets/:/usr/share/openqa/assets/:z "
 fi
 
