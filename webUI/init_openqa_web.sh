@@ -16,8 +16,6 @@ function upgradedb() {
 }
 
 function start_services() {
-  # TODO: update this to use Mojolicious ssl cert if one is not made available via -v
-
   su geekotest -c /usr/share/openqa/script/openqa-scheduler-daemon &
   su geekotest -c /usr/share/openqa/script/openqa-websockets-daemon &
   su geekotest -c /usr/share/openqa/script/openqa-gru &
@@ -73,10 +71,10 @@ chown -R geekotest /usr/share/openqa /var/lib/openqa && \
 	chmod -R a+rw /usr/share/openqa /var/lib/openqa
 
 # temporarily for development purposes just use scheme='http'
-# schedule_path="/fedora_openqa/src/fedora_openqa/schedule.py"
-# if [ -f "$schedule_path" ]; then
-#   sed -i 's/client = OpenQA_Client(openqa_hostname)/client = OpenQA_Client(openqa_hostname, scheme='"'"'http'"'"')/' $schedule_path
-# fi
+schedule_path="/fedora_openqa/src/fedora_openqa/schedule.py"
+if [ -f "$schedule_path" ]; then
+  sed -i 's/client = OpenQA_Client(openqa_hostname)/client = OpenQA_Client(openqa_hostname, scheme='"'"'http'"'"')/' $schedule_path
+fi
 
 # Replace bullet character with unicode since it sometimes interferes with the webpage display
 sed -i 's/content: "•";/content: "\\2022";/' /usr/share/openqa/assets/stylesheets/overview.scss
