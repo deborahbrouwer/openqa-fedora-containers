@@ -66,7 +66,7 @@ fcosbuild -f  	https://builds.coreos.fedoraproject.org/prod/streams/rawhide/buil
 
 ```bash
 podman exec $(podman ps -aq --filter label=title=openqa_webui) sh -c '/fedora_openqa/fedora-openqa.py \
-compose -f https://kojipkgs.fedoraproject.org/compose/cloud/Fedora-Cloud-39-20240306.0/compose'
+compose -f https://kojipkgs.fedoraproject.org/compose/cloud/Fedora-Cloud-38-20240321.0/compose'
 ```
 
 ```bash
