@@ -43,6 +43,25 @@ function upgradedb() {
   su geekotest -c '/usr/share/openqa/script/upgradedb --upgrade_database'
 }
 
+function get_fedora_openqa() {
+  fedora_openqa_dir='/fedora_openqa'
+  if [ ! -e "$fedora_openqa_dir/fedora-openqa.py" ]; then
+    git clone https://pagure.io/fedora-qa/fedora_openqa.git "$fedora_openqa_dir"
+    git config --global --add safe.directory /fedora_openqa
+    pip install "$fedora_openqa_dir"
+  else
+    # Update any changes to the fedora tests scheduler if available
+    git -C "$fedora_openqa_dir" pull || true
+    pip install "$fedora_openqa_dir"
+  fi
+
+  # temporarily for development purposes just use scheme='http'
+  schedule_path="/fedora_openqa/src/fedora_openqa/schedule.py"
+  if [ -f "$schedule_path" ]; then
+    sed -i 's/client = OpenQA_Client(openqa_hostname)/client = OpenQA_Client(openqa_hostname, scheme='"'"'http'"'"')/' $schedule_path
+  fi
+}
+
 function start_services() {
   su geekotest -c /usr/share/openqa/script/openqa-scheduler-daemon &
   su geekotest -c /usr/share/openqa/script/openqa-websockets-daemon &
@@ -100,12 +119,6 @@ configure
 chown -R geekotest /usr/share/openqa /var/lib/openqa && \
 	chmod -R a+rw /usr/share/openqa /var/lib/openqa
 
-# temporarily for development purposes just use scheme='http'
-schedule_path="/fedora_openqa/src/fedora_openqa/schedule.py"
-if [ -f "$schedule_path" ]; then
-  sed -i 's/client = OpenQA_Client(openqa_hostname)/client = OpenQA_Client(openqa_hostname, scheme='"'"'http'"'"')/' $schedule_path
-fi
-
 # Replace bullet character with unicode since it sometimes interferes with the webpage display
 sed -i 's/content: "•";/content: "\\2022";/' /usr/share/openqa/assets/stylesheets/overview.scss
 
@@ -127,14 +140,12 @@ else
   su geekotest -c "git -C '$test_dir' pull" || true
 fi
 
-# Update any changes to the fedora tests scheduler if available
-git -C /fedora_openqa pull || true
-
 chown -R geekotest /usr/share/openqa /var/lib/openqa && \
 	chmod -R a+rw /usr/share/openqa /var/lib/openqa
 
 add_cert
 start_database
+get_fedora_openqa
 start_services
 
 cleanup

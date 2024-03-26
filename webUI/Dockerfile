@@ -21,11 +21,9 @@ RUN dnf install -y openqa-local-db \
 	perl-Mojolicious perl-Mojolicious-Plugin-AssetPack \
 	ruby-devel 'rubygem(sass)' fedora-messaging python3-jsonschema wget
 
-# get test scheduler, fedora_openqa, and packages that it needs
+# get packages needed by fedora_openqa
 RUN dnf install -y fedfind python3-pip && \
-	pip install resultsdb_api openqa_client typing_extensions mwclient resultsdb_conventions wikitcms && \
-	cd / && git clone https://pagure.io/fedora-qa/fedora_openqa.git && \
-	git config --global --add safe.directory /fedora_openqa
+	pip install resultsdb_api openqa_client typing_extensions mwclient resultsdb_conventions wikitcms
 
 RUN ln -s /etc/httpd/conf.modules.d/00-base.conf /etc/httpd/conf.modules.d/00-base.load
 RUN ln -s /etc/httpd/conf.modules.d/00-ssl.conf /etc/httpd/conf.modules.d/00-ssl.load

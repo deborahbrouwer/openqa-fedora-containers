@@ -122,7 +122,7 @@ while getopts ":bchd:f:s:" opt; do
 			os_autoinst_distri_fedora_path=$OPTARG
 			;;
 		s )
-			fedora_openqa_debug_path=$OPTARG
+			fedora_openqa_path=$OPTARG
 			;;
 		\? )
 			echo "Invalid option: $OPTARG" 1>&2
@@ -161,6 +161,7 @@ if [ ! -d "$PWD/iso" ] && [ ! -L "$PWD/iso" ]; then
 	# wget "https://openqa.fedoraproject.org/tests/2389341/asset/iso/cloudinit.iso" -P "$PWD/iso"
 	cp "$PWD/cloudinit.iso" "$PWD/iso"
 fi
+
 if [ ! -d "$PWD/data" ] && [ ! -L "$PWD/data" ]; then
 	mkdir "$PWD/data"
 fi
@@ -189,11 +190,16 @@ else
 fi
 
 # https://pagure.io/fedora-qa/fedora_openqa.git
-if [ -n "$fedora_openqa_debug_path" ]; then
-	if [[ $fedora_openqa_debug_path == */ ]]; then
-		fedora_openqa_debug_path=${fedora_openqa_debug_path%/}
+if [ -n "$fedora_openqa_path" ]; then
+	if [[ $fedora_openqa_path == */ ]]; then
+		fedora_openqa_path=${fedora_openqa_path%/}
 	fi
-	fedora_openqa_debug_arg="-v $fedora_openqa_debug_path/:/fedora_openqa:z "
+	fedora_openqa_arg="-v $fedora_openqa_path/:/fedora_openqa:z "
+else
+	if [ ! -d "$PWD/fedora_openqa" ] && [ ! -L "$PWD/fedora_openqa" ]; then
+		mkdir "$PWD/fedora_openqa"
+	fi
+	fedora_openqa_arg="-v $PWD/fedora_openqa:/fedora_openqa:z "
 fi
 
 podman run -p 8080:80 -p 1443:443 \
@@ -205,6 +211,6 @@ podman run -p 8080:80 -p 1443:443 \
 -v $PWD/init_openqa_web.sh:/init_openqa_web.sh:z \
 ${os_autoinst_distri_fedora_arg} \
 ${openqa_debug_arg} \
-${fedora_openqa_debug_arg} \
+${fedora_openqa_arg} \
 --rm -it $OPENQA_WEBUI_IMAGE_ID
 
