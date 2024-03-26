@@ -9,6 +9,34 @@ function cleanup() {
 }
 trap cleanup SIGTERM SIGINT
 
+function configure() {
+  if [ -f "/conf/openqa.ini" ]; then
+    rm -rf /etc/openqa/openqa.ini
+    ln -s /conf/openqa.ini /etc/openqa/openqa.ini
+  fi
+
+  if [ -f "/conf/client.conf" ]; then
+    rm -rf /etc/openqa/client.conf
+    ln -s /conf/client.conf /etc/openqa/client.conf
+  fi
+
+  if [ -f "/conf/openqa-ssl.conf" ]; then
+    ln -s /conf/openqa-ssl.conf /etc/httpd/conf.d/openqa-ssl.conf
+  else
+    cp /etc/httpd/conf.d/openqa-ssl.conf.template /etc/httpd/conf.d/openqa-ssl.conf
+  fi
+
+  if [ -f "/conf/openqa.conf" ]; then
+    ln -s /conf/openqa.conf /etc/httpd/conf.d/openqa.conf
+  else
+    cp /etc/httpd/conf.d/openqa.conf.template  /etc/httpd/conf.d/openqa.conf
+  fi
+
+  if [ -f "/conf/fedora_openqa_scheduler.toml" ]; then
+    ln -s /conf/fedora_openqa_scheduler.toml /etc/fedora-messaging/fedora_openqa_scheduler.toml
+  fi
+}
+
 function upgradedb() {
   echo "Waiting for DB creation"
   while ! su geekotest -c 'PGPASSWORD=openqa psql -h db -U openqa --list | grep -qe openqa'; do sleep .1; done
@@ -66,6 +94,8 @@ usermod --shell /bin/sh geekotest
 
 # TODO when quay.io/fedora/fedora images starts using Fedora 40, this can be removed
 dnf -y upgrade --enablerepo=updates-testing --refresh --advisory=FEDORA-2024-b44061e715
+
+configure
 
 chown -R geekotest /usr/share/openqa /var/lib/openqa && \
 	chmod -R a+rw /usr/share/openqa /var/lib/openqa
