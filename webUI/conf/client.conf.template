@@ -4,6 +4,7 @@
 key = 1234567890ABCDEF
 secret = 1234567890ABCDEF
 
+# fifloader.py will take authorization from localhost
 [localhost]
 key = 1234567890ABCDEF
 secret = 1234567890ABCDEF
@@ -15,3 +16,5 @@ secret = 1234567890ABCDEF
 [websockets]
 key = 1234567890ABCDEF
 secret = 1234567890ABCDEF
+
+
